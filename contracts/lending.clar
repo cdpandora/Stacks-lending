@@ -20,6 +20,8 @@
 (define-constant ERR-DEPOSIT-FAILED (err u101))
 (define-constant ERR-ZERO-AMOUNT (err u102))
 (define-constant ERR-BURN-FAILED (err u103))
+(define-constant ERR-GENERIC (err u104))
+(define-constant ERR-UNKNOWN-POSITION (err u105))
 
 ;; data vars
 ;;
@@ -122,13 +124,23 @@
 ;; write the accrue interest function then the borrow function
 (define-private (accrue (who principal))
     (let (
-            (position (unwrap! (map-get? positions tx-sender) u288))
+            (position (unwrap! (map-get? positions who) ERR-UNKNOWN-POSITION))
             ;; calculate interest owed
-            (interest (pendingInterest (get lastInterestAccrual position)
-                (get debt position)
+            (interest (unwrap!
+                (pendingInterest (get lastInterestAccrual position)
+                    (get debt position)
+                )
+                ERR-GENERIC
             ))
+            (positionDebt (+ (get debt position) interest))
         )
-        (map-set position (get debt position) (+ (get deb position) interest))
+        (map-set positions who {
+            collateral: (get collateral position),
+            debt: positionDebt,
+            liquidity: (get liquidity position),
+            ;; update last time user generated interest for the protocol
+            lastInterestAccrual: stacks-block-time,
+        })
         (var-set totalDebt (+ (var-get totalDebt) interest))
         (ok true)
     )
