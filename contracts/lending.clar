@@ -128,7 +128,7 @@
                 (get debt position)
             ))
         )
-        (map-set position (get debt position) (+ (get debt position) interest))
+        (map-set position (get debt position) (+ (get deb position) interest))
         (var-set totalDebt (+ (var-get totalDebt) interest))
         (ok true)
     )
